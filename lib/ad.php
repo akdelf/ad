@@ -51,7 +51,7 @@ function unlock_id($table, $id, $user){
 }
 
 
-class AKdmin {
+class AD {
 
 private $admin = ''; 
 private $fields = array();
@@ -219,10 +219,10 @@ function config($fconfig) {
 		$set['site_ad'] = $set['AD'];
 
 	if (!isset($set['THEME']))
-		$set['THEME'] = $set['site_fold_ad'].'vendor/akdelf/akdmin/themes/office/';
+		$set['THEME'] = $set['site_fold_ad'].'vendor/akdelf/ad/themes/office/';
 
 	if (!isset($set['PUB']))
-		$set['PUB'] = $set['AD'].'vendor/akdelf/akdmin/themes/office/pub/';
+		$set['PUB'] = $set['AD'].'vendor/akdelf/ad/themes/office/pub/';
 
 	if (!isset($set['psite']))
 		$set['psite'] = $set['SITE'];
