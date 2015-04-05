@@ -253,12 +253,9 @@ if (isset($set['db'])) {
 
 
 // показываем ошибки
-if (isset($set['debug']) and $set['debug'] == 1){ 
+if ($set['debug'] == 1){ 
 	error_reporting(E_ALL);
 	ini_set('display_errors', 1);
-}
-else {
-	ini_set('display_errors',0);
 }
 
 configer::load($set);
@@ -272,62 +269,61 @@ return $this;
 }
 
 
-
-
-
+function authenticate() {
+    header('WWW-Authenticate: Basic realm="Test Authentication System"');
+    header('HTTP/1.0 401 Unauthorized');
+    echo "No authorized \n";
+    exit;
+}
 
 
 
 
 function start(){
 
-	if (!defined('DEBUG')) {
-		include_once ('auth.lib.php');
-		$auth = new auth();
-		$auth->action();
-		
-		$user_row = kORM::table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
+	
+	session_start();
+	
+	if (!isset($_SERVER['PHP_AUTH_USER']) && $_SERVER['PHP_AUTH_PW']) {	
+		authenticate();
+	}	
 
-		/*$user = mysql_query("SELECT * FROM `users` Where `login`='".$_SERVER['PHP_AUTH_USER']."'");
-		$user_row = mysql_fetch_array($user);*/
+
+	$user_row = kORM::table('users')->where('login', $_SERVER['PHP_AUTH_USER'])->one();
 	
-		if ($user_row == null)
-			$auth->authorized();
-	
-		session_start();
-		$_SESSION['user_id'] = $user_row['user_id'];
-		setcookie('user_id', $user_row['user_id']);
+	if ($user_row == null) {
+		$this->username = $_SERVER['PHP_AUTH_USER'];
+		$this->userid =  $_SERVER['PHP_AUTH_USER'];
+		$group_id = 1;
+	}
+	else{
+
 		$this->userid = $user_row['user_id']; 
 		$group_id =  $user_row['group_id'];
 		$nameuser = $user_row['name'];
 		$region_id = $user_row['region_id'];
 
-		$this->username = $nameuser;
-	
-		$grrow = kORM::table('groupuser')->where('group_id', $group_id)->one();
-
-		if ($user_row != null) {
-			$_SESSION['group'] = $grrow['name'];
-			$_SESSION['readonly'] = 0;		
-		}
-		else
-			$_SESSION['readonly'] = 0;
-	
-	
-		write_log($_SERVER['PHP_AUTH_USER'].':ip='.$_SERVER['REMOTE_ADDR'].':authorized', 'log/edition.log');
 	}
-	else
-		$group_id = 1;
 
+	$_SESSION['user_id'] = $user_row['user_id'];
+	setcookie('user_id', $user_row['user_id']);
+
+	write_log($_SERVER['PHP_AUTH_USER'].':ip='.$_SERVER['REMOTE_ADDR'].':authorized', 'log/edition.log');
+	
 
 	$menufile = file_get_contents(APPPATH.'menu/'.$group_id.'.json');
-	
 	$menus = json_decode($menufile, true);
 
 	include(THEME.'views/layout/main.phtml');
 	return;
 
+
 }
+
+
+
+
+
 
 
 function user_init() {
@@ -581,6 +577,7 @@ function quote($txt)
 
 	$sql_select = 'SELECT '.implode(',', $fields).' FROM '.separ($table).$join.$where.$order.$limit;
 	//echo $table.': '.$sql_select.'<br /><br />';
+	
 	$selectres = mysql_query($sql_select);
 
 	if (@mysql_num_rows($selectres) !== 0) {
@@ -843,15 +840,19 @@ $order = (isset($_GET['order'])) ? strip_tags(trim($_GET['order'])) : '';
 					if ($filters_count == 1)
 						 echo '<p id = "titles">Фильтрация</p><div id = "filter">
 						 <table>';
+				
 					
-					$ftable = table($item[$it]->lookup->table)->select($item[$it]->lookup->id, $item[$it]->lookup->column);
-					
+					$ftable = kORM::table($item[$it]->lookup->table)->select($item[$it]->lookup->id, $item[$it]->lookup->column);
+
 					if ($item[$it]->lookup->where != '')
 						$ftable->wh($item[$it]->lookup->where);
 					
 					if ($item[$it]->lookup->order != '')
 						$ftable->ord_str($item[$it] ->lookup->order);
 										
+					
+					echo $ftable;
+
 					$fitems = $ftable->all();
 
 					if ($fitems !== null){
